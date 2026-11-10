@@ -2402,7 +2402,7 @@ pub fn construction_points(app: &SolveApp) -> Vec<(String, Vec3)> {
 }
 
 /// Construction planes as drawn and picked: (name, normal, quad). A plane is a square of a fixed
-/// share of the view round its origin, grown past the edges of every body it passes through:
+/// share of the view round its origin, grown past the edges of every shown body it passes through:
 /// zoomed in, the square alone fits inside the part and the body hides it (#13318).
 pub fn construction_quads(app: &SolveApp) -> Vec<(String, Vec3, [Vec3; 4])> {
     let h = origin_size(app.cam.half_height()) * 1.2;
@@ -2413,7 +2413,7 @@ pub fn construction_quads(app: &SolveApp) -> Vec<(String, Vec3, [Vec3; 4])> {
         .filter(|(_, n, _)| app.session.construction_visible(n))
         .map(|(_, name, pl)| {
             let mut r = solidcraft_engine::geom::Aabb2 { min: Vec2::new(-h, -h), max: Vec2::new(h, h) };
-            for (_, b) in bodies.iter() {
+            for (_, b) in bodies.iter().filter(|(body, _)| app.body_visible(body)) {
                 r = r.union(&plane_cover(&pl, b));
             }
             let q = [r.min, Vec2::new(r.max.x, r.min.y), r.max, Vec2::new(r.min.x, r.max.y)];

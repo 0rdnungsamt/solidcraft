@@ -123,4 +123,12 @@ fn a_midplane_shows_round_the_part_when_zoomed_in() {
         let side = above[0].dist(above[1]);
         assert!((side - 2.0 * h_side).abs() < 1e-6 * h_side.max(1.0), "distance {distance}: a plane clear of the box keeps its square: {above:?}");
     }
+    // A hidden body does not size the plane: with the box hidden the midplane is its square again.
+    h.app.session.visibility.hidden_bodies.push("Box".into());
+    h.settle();
+    let h_side = crate::selection::origin_size(h.app.cam.half_height()) * 1.2;
+    let quads = crate::viewport::construction_quads(&h.app);
+    let mid = quads.iter().find(|q| q.0 == "Mid").map(|q| q.2).unwrap_or_else(|| panic!("Mid is drawn: {quads:?}"));
+    let side = mid[0].dist(mid[1]);
+    assert!((side - 2.0 * h_side).abs() < 1e-6 * h_side.max(1.0), "the hidden box no longer sizes the midplane: {mid:?}");
 }
