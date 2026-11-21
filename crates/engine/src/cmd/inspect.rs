@@ -135,8 +135,12 @@ pub static COMMANDS: &[CommandSpec] = &[
     CommandSpec::new("appearance.copy", "Copy Look", crate::checked!("appearance.copy", appearance_gestures::copy)).icon("copy").noundo().key("Ctrl+Alt+C")
         .contract(&COPY_CONTRACT).output(crate::schema::output_schema_for::<AppearanceCopyResult>)
         .params("target: appearance.chain target. Copies its resolved look to a transient session clipboard. No document change or dialogs."),
-    CommandSpec::new("appearance.paste", "Paste Look", appearance_gestures::paste).icon("paste").key("Ctrl+Alt+V")
-        .params("bodies/faces/components: appearance.assign targets. Applies the copied look atomically in one undo step; no dialogs."),
+    CommandSpec::new("appearance.paste", "Paste Look", crate::checked!("appearance.paste", appearance_gestures::paste)).icon("paste").key("Ctrl+Alt+V")
+        .contract(&PASTE_CONTRACT).output(crate::schema::output_schema_for::<AppearanceAssignResult>)
+        .params(
+            "bodies/faces/components: appearance.assign targets, and no look keys: the look is the one appearance.copy put in the clipboard. \
+             Applies it atomically in one undo step; no dialogs.",
+        ),
     CommandSpec::new("appearance.favorite", "Favorite Look", appearance_gestures::favorite).icon("star").noundo().doc_only()
         .params("look: appearance.assign look; favorite: bool → validated look and preference request; UI library preference only, no document change or dialogs."),
     CommandSpec::new("appearance.chain", "Appearance Chain", appearance_chain::chain).icon("inspect").noundo().params(
@@ -888,14 +892,15 @@ pub(crate) fn color_param(v: &Value) -> Option<[u8; 3]> {
 
 use crate::schema::appearance::{
     AppearanceAssignParams, AppearanceAssignResult, AppearanceCopyParams, AppearanceCopyResult, AppearanceLibraryParams, AppearanceLibraryResult,
-    AppearanceListParams, AppearanceListResult, BodyLooks, ComponentLookReply, FaceIndexLook, FaceLookReply, FaceSpot, LibraryAppearance,
-    LookInDesign, LookReply, PbrReply, PlainAppearance, StarterAppearance,
+    AppearanceListParams, AppearanceListResult, AppearancePasteParams, BodyLooks, ComponentLookReply, FaceIndexLook, FaceLookReply, FaceSpot,
+    LibraryAppearance, LookInDesign, LookReply, PbrReply, PlainAppearance, StarterAppearance,
 };
 
 const ASSIGN_CONTRACT: TypedContract<AppearanceAssignParams> = TypedContract::new();
 const LIBRARY_CONTRACT: TypedContract<AppearanceLibraryParams> = TypedContract::new();
 const LIST_CONTRACT: TypedContract<AppearanceListParams> = TypedContract::new();
 const COPY_CONTRACT: TypedContract<AppearanceCopyParams> = TypedContract::new();
+const PASTE_CONTRACT: TypedContract<AppearancePasteParams> = TypedContract::new();
 
 /// An appearance command's reply, built from its schema's type so the two can't drift apart.
 fn appearance_reply(cmd: &str, r: impl serde::Serialize) -> Result<Value> {
